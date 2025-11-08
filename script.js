@@ -193,7 +193,7 @@ let totalCorrectKeystrokes = 0;
 // 3. ローマ字・かな変換ルール (ユーザーファイルのものを維持、ぴょは修正済み)
 // =========================================================
 const ROMAJI_RULES = {
-    'ぁ': ['xa', 'la'], 'ぃ': ['xi', 'li'], 'ぅ': ['xu', 'lu'], 'ぇ': ['xe', 'le'], 'ぉ': ['xo', 'lo'], 'っ': ['xtu','xtsu','ltu', 'ltsu'],
+    'ぁ': ['xa', 'la'], 'ぃ': ['xi', 'li'], 'ぅ': ['xu', 'lu'], 'ぇ': ['xe', 'le'], 'ぉ': ['xo', 'lo'], 
     'あ': ['a'], 'い': ['i'], 'う': ['u'], 'え': ['e'], 'お': ['o'], 
     'か': ['ka'], 'き': ['ki'], 'く': ['ku'], 'け': ['ke'], 'こ': ['ko'],
     'さ': ['sa'], 'し': ['shi', 'si'], 'す': ['su'], 'せ': ['se'], 'そ': ['so'], 
@@ -209,6 +209,7 @@ const ROMAJI_RULES = {
     'だ': ['da'], 'ぢ': ['di'], 'づ': ['du'], 'で': ['de'], 'ど': ['do'], 
     'ば': ['ba'], 'び': ['bi'], 'ぶ': ['bu'], 'べ': ['be'], 'ぼ': ['bo'], 
     'ぱ': ['pa'], 'ぴ': ['pi'], 'ぷ': ['pu'], 'ぺ': ['pe'], 'ぽ': ['po'], 
+    'っ': ['xtu', 'ltu', 'xtsu', 'ltsu'],
 
     'きゃ': ['kya'], 'きゅ': ['kyu'], 'きょ': ['kyo'], 'しゃ': ['sha', 'sya'], 'しゅ': ['shu', 'syu'], 'しょ': ['sho', 'syo'], 
     'ちゃ': ['cha', 'tya'], 'ちゅ': ['chu', 'tyu'], 'ちょ': ['cho', 'tyo'], 'にゃ': ['nya'], 'にゅ': ['nyu'], 'にょ': ['nyo'], 
@@ -398,6 +399,53 @@ function finalClearEvent() {
 // =========================================================
 // 7. 問題の表示と状態更新の関数
 // =========================================================
+
+function getRomajiSequence(text, index) {
+    const char = text.charAt(index);
+    
+    // ★★★ 修正箇所2: 促音「っ」の処理ロジックを置き換え ★★★
+    if (char === 'っ') {
+        
+        // ① ROMAJI_RULES['っ']に直接定義されたルールを最初にチェック
+        if (ROMAJI_RULES[char] !== undefined) {
+             // 新しいルールと、後続の子音重複ルールを組み合わせる
+            const baseRules = ROMAJI_RULES[char]; 
+            
+            // 後続の文字があれば、子音重複ルールを生成して追加する
+            if (index + 1 < text.length) {
+                const nextSequence = getRomajiSequence(text, index + 1);
+                
+                // 子音重複ルール: 次のカナの最初のローマ字の頭文字を促音のルールに追加
+                if (nextSequence.romaji[0] !== '-(KEY_IGNORE)') {
+                    const firstLetter = nextSequence.romaji.map(r => r.charAt(0)).filter(l => l !== '-')[0];
+                    if (firstLetter) {
+                        return { 
+                            romaji: [...baseRules, firstLetter], // 新ルールと子音重複を結合
+                            length: 1 
+                        };
+                    }
+                }
+            }
+            // 次の文字がないか、または無視キーの場合は、新ルールのみ適用
+            return { romaji: baseRules, length: 1 };
+        }
+    }
+    // ----------------------------------------------------------------
+    
+    if (index + 1 < text.length) {
+        const nextChar = text.charAt(index + 1);
+        const twoChars = char + nextChar;
+        if (ROMAJI_RULES[twoChars] !== undefined) {
+            return { romaji: ROMAJI_RULES[twoChars], length: 2 }; 
+        }
+    }
+    
+    if (ROMAJI_RULES[char] !== undefined) {
+        return { romaji: ROMAJI_RULES[char], length: 1 }; 
+    }
+    return { romaji: ['-(KEY_IGNORE)'], length: 1 };
+}
+
 
 function getRomajiSequence(text, index) {
     const char = text.charAt(index);
@@ -980,3 +1028,4 @@ function startGameLogic() {
     }
 
 }
+
