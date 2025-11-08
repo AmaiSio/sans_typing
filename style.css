@@ -1,0 +1,151 @@
+/* UNDERTALE SANS戦闘画面風 CSS */
+
+/* --- 1. フォント定義 --- */
+@font-face {
+    font-family: 'Shinonome Dot Font'; /* 自分で定義するフォント名 */
+    src: url('JF-Dot-Shinonome14.ttf') format('truetype'); /* ファイル名を指定 */
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* 全体の設定 */
+body {
+    background-color: #000 !important; /* ★最優先で背景を黒に★ */
+    color: #fff; /* テキストを白に */
+    /* ★修正: 全てのテキストにドットフォントを適用★ */
+    font-family: 'Shinonome Dot Font', monospace; 
+    
+    display: flex;
+    flex-direction: column;
+    align-items: center; 
+    justify-content: flex-start; /* 上から順に要素を配置する */
+    height: 100vh; 
+    margin: 0;
+    padding-top: 20px; 
+    padding-bottom: 20px; 
+    box-sizing: border-box;
+}
+
+/* 1. SANSエリア */
+#sans-area {
+    margin-bottom: 100px; 
+}
+#sans-image {
+    image-rendering: pixelated; /* ドット絵がぼやけないように設定 */
+}
+
+/* 2. 問題文エリア (#problem-text) */
+#problem-text {
+    font-size: 28px;
+    text-align: center;
+    width: 80%;
+    max-width: 1000px;
+    margin: 20px 0; 
+    position: relative; 
+    z-index: 5;
+    height: 60px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+}
+
+/* 3. 中央の戦闘ボックス */
+#battle-box {
+    font-size: 20px;
+    width: 80%;
+    max-width: 1000px;
+    height: 150px;
+    border: 3px solid white; 
+    padding: 15px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    outline: none; 
+}
+
+/* ユーザーからの入力を受け付けるinput要素は画面上非表示にする */
+#typing-input {
+    position: absolute;
+    opacity: 0; 
+    z-index: -1; 
+}
+
+/* 4. 下部情報エリア */
+#info-area {
+    margin-top: 30px; 
+    width: 80%;
+    max-width: 400px;
+    padding: 10px;
+    /* 背景色をデフォルトで黒に設定 */
+    background-color: #000; 
+}
+
+/* HPゲージを含むステータスバーのレイアウト */
+.status-bar {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+.label {
+    margin-right: 5px;
+    font-weight: bold;
+}
+#hp-gauge-container {
+    width: 200px; 
+    height: 38px;
+    margin-right: 32px;
+    background-color: #d00a08; /* ゲージの背景色 */
+}
+#hp-gauge {
+    height: 100%;
+    width: 100%; 
+    background-color: yellow; /* HPの色 */
+    transition: width 0.3s ease; 
+}
+
+/* スコア情報のレイアウト */
+#score-stats {
+    font-size: 18px;
+    margin-top: 5px;
+}
+
+/* style.css の最下部に以下を追加 */
+
+/* ★追加: ESC RESTART の ESC を囲むスタイル ★ */
+#esc-key-box {
+    border: 1px solid white; /* 1pxの白い線で囲む */
+    padding: 0 4px;          /* 内側の余白を調整 */
+    margin-right: 2px;       /* RESTARTとの間隔 */
+    display: inline-block;
+}
+
+/* ゲームオーバーなどで全体が暗転した際に、ESC RESTARTの文字が目立たないようにするための設定 */
+#esc-restart-text {
+    margin-left: 20px; /* MISTAKESとの間隔 */
+    font-size: 18px; /* 少し小さくても良いかもしれません */
+}
+
+/* style.css (末尾に追加) */
+
+/* 修正点3: HP表示に使用する画像のサイズ設定 */
+.hp-img-static,
+.hp-img-dynamic {
+    height: 26.6px; /* HPゲージの高さ 38px の 70% */
+    width: auto;
+    image-rendering: pixelated;
+    vertical-align: middle; /* インライン要素なので中央揃えに */
+}
+
+/* HPラベルの画像に元のマージンを適用 */
+#hp-label-img {
+    margin-right: 13px;
+}
+
+/* HP値の表示エリア (数字画像を中央揃えで並べる) */
+#hp-value {
+    display: flex;
+    align-items: center; 
+    font-size: 0; /* 画像表示のためテキストサイズを0に */
+}
