@@ -581,7 +581,7 @@ function renderText() {
             kanaPointer += length;
         }
         
-        romajiProgressHTML += `<span style="color: #666; white-space: nowrap;">${remainingRomajiDisplay.toUpperCase()}</span>`;
+        romajiProgressHTML += `<span style="color: #fff; white-space: nowrap;">${remainingRomajiDisplay.toUpperCase()}</span>`;
     }
     
     // 2. 読み仮名 (ひらがな) の進捗を生成
@@ -1028,4 +1028,5 @@ function startGameLogic() {
     }
 
 }
+
 
