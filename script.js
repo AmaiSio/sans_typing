@@ -194,6 +194,7 @@ let totalCorrectKeystrokes = 0;
 // =========================================================
 const ROMAJI_RULES = {
     'ぁ': ['xa', 'la'], 'ぃ': ['xi', 'li'], 'ぅ': ['xu', 'lu'], 'ぇ': ['xe', 'le'], 'ぉ': ['xo', 'lo'], 
+    'っ': ['xtu', 'ltu', 'xtsu', 'ltsu'],
     'あ': ['a'], 'い': ['i'], 'う': ['u'], 'え': ['e'], 'お': ['o'], 
     'か': ['ka'], 'き': ['ki'], 'く': ['ku'], 'け': ['ke'], 'こ': ['ko'],
     'さ': ['sa'], 'し': ['shi', 'si'], 'す': ['su'], 'せ': ['se'], 'そ': ['so'], 
@@ -203,13 +204,12 @@ const ROMAJI_RULES = {
     'ま': ['ma'], 'み': ['mi'], 'む': ['mu'], 'め': ['me'], 'も': ['mo'], 
     'や': ['ya'], 'ゆ': ['yu'], 'よ': ['yo'], 'ら': ['ra'], 'り': ['ri'],
     'る': ['ru'], 'れ': ['re'], 'ろ': ['ro'], 'わ': ['wa'], 'を': ['wo'], 
-    'ん': ['nn'], // ユーザーファイルの定義を維持
+    
     'が': ['ga'], 'ぎ': ['gi'], 'ぐ': ['gu'], 'げ': ['ge'], 'ご': ['go'], 
     'ざ': ['za'], 'じ': ['zi', 'ji'], 'ず': ['zu'], 'ぜ': ['ze'], 'ぞ': ['zo'], 
     'だ': ['da'], 'ぢ': ['di'], 'づ': ['du'], 'で': ['de'], 'ど': ['do'], 
     'ば': ['ba'], 'び': ['bi'], 'ぶ': ['bu'], 'べ': ['be'], 'ぼ': ['bo'], 
     'ぱ': ['pa'], 'ぴ': ['pi'], 'ぷ': ['pu'], 'ぺ': ['pe'], 'ぽ': ['po'], 
-    'っ': ['xtu', 'ltu', 'xtsu', 'ltsu'],
 
     'きゃ': ['kya'], 'きゅ': ['kyu'], 'きょ': ['kyo'], 'しゃ': ['sha', 'sya'], 'しゅ': ['shu', 'syu'], 'しょ': ['sho', 'syo'], 
     'ちゃ': ['cha', 'tya'], 'ちゅ': ['chu', 'tyu'], 'ちょ': ['cho', 'tyo'], 'にゃ': ['nya'], 'にゅ': ['nyu'], 'にょ': ['nyo'], 
@@ -403,74 +403,81 @@ function finalClearEvent() {
 function getRomajiSequence(text, index) {
     const char = text.charAt(index);
     
-    // ★★★ 修正箇所2: 促音「っ」の処理ロジックを置き換え ★★★
-    if (char === 'っ') {
+    // ----------------------------------------------------------------------
+    // 1. 拗音（きゃ、しゅ、など）の判定
+    // ----------------------------------------------------------------------
+    if (index + 1 < text.length) {
+        const nextChar = text.charAt(index + 1);
+        const twoChars = char + nextChar;
+        if (ROMAJI_RULES[twoChars] !== undefined) {
+            return { romaji: ROMAJI_RULES[twoChars], length: 2 }; 
+        }
+    }
+
+    // ----------------------------------------------------------------------
+    // 2. 「っ」の判定（標準の子音重ね打ちと拡張入力を両立させる）
+    // ----------------------------------------------------------------------
+   if (char === 'っ') {
+        // 拡張入力の判定: xtu, ltu, xtsu, ltsu
+        const extendedRomaji = ROMAJI_RULES['っ'] || [];
         
-        // ① ROMAJI_RULES['っ']に直接定義されたルールを最初にチェック
-        if (ROMAJI_RULES[char] !== undefined) {
-             // 新しいルールと、後続の子音重複ルールを組み合わせる
-            const baseRules = ROMAJI_RULES[char]; 
-            
-            // 後続の文字があれば、子音重複ルールを生成して追加する
-            if (index + 1 < text.length) {
-                const nextSequence = getRomajiSequence(text, index + 1);
-                
-                // 子音重複ルール: 次のカナの最初のローマ字の頭文字を促音のルールに追加
-                if (nextSequence.romaji[0] !== '-(KEY_IGNORE)') {
-                    const firstLetter = nextSequence.romaji.map(r => r.charAt(0)).filter(l => l !== '-')[0];
-                    if (firstLetter) {
-                        return { 
-                            romaji: [...baseRules, firstLetter], // 新ルールと子音重複を結合
-                            length: 1 
-                        };
-                    }
-                }
-            }
-            // 次の文字がないか、または無視キーの場合は、新ルールのみ適用
-            return { romaji: baseRules, length: 1 };
-        }
-    }
-    // ----------------------------------------------------------------
-    
-    if (index + 1 < text.length) {
-        const nextChar = text.charAt(index + 1);
-        const twoChars = char + nextChar;
-        if (ROMAJI_RULES[twoChars] !== undefined) {
-            return { romaji: ROMAJI_RULES[twoChars], length: 2 }; 
-        }
-    }
-    
-    if (ROMAJI_RULES[char] !== undefined) {
-        return { romaji: ROMAJI_RULES[char], length: 1 }; 
-    }
-    return { romaji: ['-(KEY_IGNORE)'], length: 1 };
-}
-
-
-function getRomajiSequence(text, index) {
-    const char = text.charAt(index);
-    if (index + 1 < text.length) {
-        const nextChar = text.charAt(index + 1);
-        const twoChars = char + nextChar;
-        if (ROMAJI_RULES[twoChars] !== undefined) {
-            return { romaji: ROMAJI_RULES[twoChars], length: 2 }; 
-        }
-    }
-    if (char === 'っ') {
         if (index + 1 < text.length) {
+            // 標準入力（子音重ね打ち）の判定
             const nextSequence = getRomajiSequence(text, index + 1);
+            
             if (nextSequence.romaji[0] !== '-(KEY_IGNORE)') {
+                // 次のカナブロックの先頭子音を取得
+                const repeatedConsonants = nextSequence.romaji
+                    .map(r => r.charAt(0))
+                    .filter((v, i, a) => a.indexOf(v) === i); // 重複を排除
+
+                // ★修正点1-2: 標準入力（子音重ね打ち）をリストの先頭に配置し、表示を優先させる
                 return { 
-                    romaji: nextSequence.romaji.map(r => r.charAt(0)), 
+                    romaji: [...repeatedConsonants, ...extendedRomaji], 
                     length: 1 
                 };
             }
         }
-        return { romaji: ['-(KEY_IGNORE)'], length: 1 };
+        // 文末の「っ」または無視文字が続く場合は、拡張入力のみ（または無視）
+        return { romaji: extendedRomaji.length > 0 ? extendedRomaji : ['-(KEY_IGNORE)'], length: 1 };
     }
+
+    // ----------------------------------------------------------------------
+    // 3. 「ん」の判定（文脈に応じてルールを切り替える）
+    // ----------------------------------------------------------------------
+    if (char === 'ん') {
+        let isFollowedByVowelOrEnd = false;
+        
+        if (index + 1 >= text.length) {
+            // (1) 文末の場合 (わいん)
+            isFollowedByVowelOrEnd = true;
+        } else {
+            // (2) 次のカナブロックのローマ字の先頭が母音かどうか
+            const nextSequence = getRomajiSequence(text, index + 1);
+            if (nextSequence.romaji[0] !== '-(KEY_IGNORE)') {
+                const firstChar = nextSequence.romaji[0].charAt(0).toLowerCase();
+                // 次のカナの先頭が母音 (a, i, u, e, o) または 'y' (や行) の場合
+                if (['a', 'i', 'u', 'e', 'o', 'y'].includes(firstChar)) { 
+                    isFollowedByVowelOrEnd = true; 
+                }
+            }
+        }
+
+        // 【すべての場合】: NNまたはXNを強制し、単独の'n'を許容しない
+        // これにより、「ん」は必ず2文字以上の入力が求められるため、
+        // typedRomajiがリセットされてしまう問題を防ぎ、
+        // 「KONNNA」や「TANNDA」を正しく判定できます。
+        return { romaji: ['nn', 'xn'], length: 1 };
+    }
+    
+    // ----------------------------------------------------------------------
+    // 4. その他の1文字カナ、句読点などの判定
+    // ----------------------------------------------------------------------
     if (ROMAJI_RULES[char] !== undefined) {
-        return { romaji: ROMAJI_RULES[char], length: 1 }; 
+        return { romaji: ROMAJI_RULES[char], length: 1 };
     }
+    
+    // 5. ROMAJI_RULESに定義されていない無視すべき文字
     return { romaji: ['-(KEY_IGNORE)'], length: 1 };
 }
 
@@ -1026,7 +1033,4 @@ function startGameLogic() {
         
         battleBoxElement.focus(); 
     }
-
 }
-
-
