@@ -109,6 +109,10 @@ body {
 #score-stats {
     font-size: 18px;
     margin-top: 5px;
+/* 画面上に常に表示し、z-indexを機能させるために必要 */
+    position: relative; 
+    /* ゲームオーバー画面 (z-index: 20) より大きい値にする */
+    z-index: 30;
 }
 
 /* style.css の最下部に以下を追加 */
