@@ -32,6 +32,14 @@ const MAX_HP_INITIAL = 92;
 const MAX_HP_AFTER_CLEAR = 99; // ★クリア後の最大HP
 const BGM_VOLUME = 0.5; 
 
+let startTime = 0;
+let timeInterval = null;
+let elapsedTime = 0; // 経過時間（ミリ秒）
+
+// ... 既存の要素の取得
+const timeValueElement = document.getElementById('time-value'); // ★追加★
+
+
 
 // =========================================================
 // 0.5. HP画像ファイルマッピング (新規追加)
@@ -296,6 +304,46 @@ function fadeOutBGM(durationMs) {
 // 5. イベント実行関数 (変更なし)
 // =========================================================
 
+// =========================================================
+// 5. 経過時間計測の関数 (新規追加)
+// =========================================================
+
+function updateTimeDisplay() {
+    elapsedTime = Date.now() - startTime;
+    
+    // ミリ秒を計算 (下2桁のみ表示)
+    const ms = String(Math.floor(elapsedTime % 1000)).padStart(3, '0').slice(0, 2);
+    
+    // 秒を計算
+    const totalSeconds = Math.floor(elapsedTime / 1000);
+    const seconds = String(totalSeconds % 60).padStart(2, '0');
+    
+    // 分を計算
+    const minutes = Math.floor(totalSeconds / 60);
+
+    // 形式 (分):(秒).00 で表示
+    timeValueElement.textContent = `${minutes}:${seconds}.${ms}`;
+}
+
+function startTimer() {
+    if (timeInterval) {
+        clearInterval(timeInterval); // 既存のタイマーをクリア
+    }
+    startTime = Date.now() - elapsedTime; // 停止していた時間から再開
+    // 10ミリ秒ごとに時間を更新
+    timeInterval = setInterval(updateTimeDisplay, 10); 
+}
+
+function stopTimer() {
+    if (timeInterval) {
+        clearInterval(timeInterval);
+        timeInterval = null;
+    }
+}
+
+
+
+
 function executeDialogueEvent(event) {
     if (!event || !event.action) return;
 
@@ -399,6 +447,21 @@ function finalClearEvent() {
 // =========================================================
 // 7. 問題の表示と状態更新の関数
 // =========================================================
+
+
+function loadNextReading() {
+    // ... 既存の処理 ...
+
+    if (!gameStarted) {
+        gameStarted = true;
+        // ★修正点1-3: ゲーム開始時にタイマーをスタート★
+        startTimer(); 
+    }
+    
+    // ... 既存の処理 ...
+}
+
+
 
 function getRomajiSequence(text, index) {
     const char = text.charAt(index);
@@ -828,6 +891,7 @@ function updateScoreDisplay() {
 function triggerGameClear() {
     isGameOver = true;
     stopBGM(); 
+    stopTimer();
     if (scoreIntervalId) {
         clearInterval(scoreIntervalId);
         scoreIntervalId = null;
@@ -868,6 +932,7 @@ function triggerGameClear() {
 function triggerGameOver() { 
     isGameOver = true;
     stopBGM();
+    stopTimer();
     if (scoreIntervalId) {
         clearInterval(scoreIntervalId);
         scoreIntervalId = null;
@@ -908,6 +973,7 @@ function triggerGameOver() {
     }, 4000); 
 }
 
+
 // ★★★ 修正箇所: setupContinueListenerをページ再読み込みに置き換え (要求1) ★★★
 function setupContinueListener() { 
     const continueHandler = (e) => {
@@ -915,12 +981,26 @@ function setupContinueListener() {
             e.preventDefault();
             document.removeEventListener('keydown', continueHandler); 
             
-            // ゲームオーバー時/クリア時の [SPACE] はページ再読み込みで完全リセット
-            window.location.reload(); 
+            // 🌟 修正点: SAVEPOINT_SOUND_PATH (文字列) から Audio オブジェクトを生成 🌟
+            try { 
+                // 新しい Audio オブジェクトをファイルパスから作成
+                const savepointAudio = new Audio(SAVEPOINT_SOUND_PATH); 
+                // 作成した Audio オブジェクトを playAudio 関数に渡す
+                playAudio(savepointAudio); 
+            } catch (error) {
+                // エラーが発生しても、リロード処理は続行
+                console.error("Failed to play savepoint audio:", error); 
+            }
+            
+            // 🌟 1秒後 ページ読み込み(window.location.reload)を行う 🌟
+            setTimeout(() => {
+                window.location.reload(); 
+            }, 2000); // 1000ミリ秒 = 1秒
         }
     };
     document.addEventListener('keydown', continueHandler);
 }
+
 
 // ★★★ 新規追加: グローバルキーリスナーでFキーとESCキーの挙動を制御 (要求2, 3) ★★★
 function addGlobalKeyListener() {
@@ -1022,6 +1102,10 @@ function startGameOnKeyPress(e) {
 
 function startGameLogic() { 
     if (!gameInitialized) {
+
+
+        gameInitialized = true;
+        startTimer();
         
         // startBGM(MEGALOVANIA_PATH); // ★修正: ゲーム開始時のBGM再生を削除
         loadNextDialogue(); 
@@ -1034,4 +1118,3 @@ function startGameLogic() {
         battleBoxElement.focus(); 
     }
 }
-
