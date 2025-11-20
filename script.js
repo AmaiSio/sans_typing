@@ -684,6 +684,13 @@ battleBoxElement.addEventListener('keydown', (e) => {
     if (isGameOver || !gameInitialized) {
         return;
     }
+
+
+// 🌟 修正箇所: キーリピート（押しっぱなしによる連続入力）を無視 🌟
+    if (e.repeat) {
+        return; 
+    }
+
     
     // ★★★ 修正箇所: Fキーが押されたら誤タイプせずに処理を終了する ★★★
     if (e.code.startsWith('F') && e.code.length > 1 && parseInt(e.code.substring(1)) >= 1 && parseInt(e.code.substring(1)) <= 12) {
